@@ -83,7 +83,8 @@ class Execution(Base):
                           backref='execution')
 
     exclude_from_dict = ['info']
-    dont_garbage_collect = []
+    jobmanager=None
+    dont_garbage_collect = None
 
     @declared_attr
     def status(cls):
@@ -109,23 +110,14 @@ class Execution(Base):
 
     def __init__(self, manual_instantiation=True, *args, **kwargs):
         if manual_instantiation:
-            raise TypeError, 'Do not instantiate an Execution manually.  Use the Cosmos.start method.'
+            raise TypeError('Do not instantiate an Execution manually.  Use the Cosmos.start method.')
         super(Execution, self).__init__(*args, **kwargs)
         assert self.output_dir is not None, 'output_dir cannot be None'
         if self.info is None:
             # mutable dict column defaults to None
             self.info = dict()
         self.jobmanager = None
-        if not self.created_on:
-            self.created_on = datetime.datetime.now()
-        self._task_references_to_stop_garbage_collection_which_destroys_tool_attribute = []
-
-    def __getattr__(self, item):
-        if item == 'log':
-            self.log = get_logger('cosmos-%s' % Execution.name, opj(self.output_dir, 'execution.log'))
-            return self.log
-        else:
-            raise AttributeError('%s is not an attribute of %s' % (item, self))
+        self.dont_garbage_collect = []
 
     def add_task(self, cmd_fxn, tags=None, parents=None, out_dir='', stage_name=None):
         """
@@ -283,7 +275,7 @@ class Execution(Base):
         session.add(self)
         # session.add_all(stage_g.nodes())
         # session.add_all(task_g.nodes())
-        successful = filter(lambda t: t.successful, task_g.nodes())
+        successful = [t for t in task_g.nodes() if t.successful]
 
         # print stages
         for s in topological_sort(stage_g):
@@ -400,13 +392,15 @@ class Execution(Base):
     def url(self):
         return url_for('cosmos.execution', name=self.name)
 
+    @property
+    def log(self):
+        return get_logger('cosmos-%s' % Execution.name, opj(self.output_dir, 'execution.log'))
+
     def __repr__(self):
         return '<Execution[%s] %s>' % (self.id or '', self.name)
 
-    def __unicode__(self):
-        return self.__repr__()
 
-    def delete(self, delete_files):
+    def delete(self, delete_files: bool):
         """
         :param delete_files: (bool) If True, delete :attr:`output_dir` directory and all contents on the filesystem
         """
@@ -418,7 +412,7 @@ class Execution(Base):
                 self.log.removeHandler(h)
                 # time.sleep(.1)  # takes a second for logs to flush?
 
-        print >> sys.stderr, 'Deleting output_dir: %s...' % self.output_dir
+        print('Deleting output_dir: %s...' % self.output_dir, file=sys.stderr)
         if delete_files and os.path.exists(self.output_dir):
             shutil.rmtree(self.output_dir)
 
@@ -433,10 +427,10 @@ class Execution(Base):
         # self.session.query(Task).join(Stage).join(Execution).filter(Execution.id == self.id).delete()
         # self.session.query(Stage).join(Execution).filter(Execution.id == self.id).delete()
         #
-        print >> sys.stderr, '%s Deleting from SQL...' % self
+        print('%s Deleting from SQL...' % self, file=sys.stderr)
         self.session.delete(self)
         self.session.commit()
-        print >> sys.stderr, '%s Deleted' % self
+        print('%s Deleted' % self, file=sys.stderr)
 
 
 # @event.listens_for(Execution, 'before_delete')

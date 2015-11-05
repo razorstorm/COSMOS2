@@ -1,5 +1,7 @@
 *.db
 *.egg-info
+ve
+examples/analysis_out
 test/out
 .project
 .idea/

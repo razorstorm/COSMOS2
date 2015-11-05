@@ -8,10 +8,10 @@ from ..util.args import get_last_cmd_executed
 from ..db import Base
 from .. import __version__
 import math
-from concurrent import futures
+# from concurrent import futures
 
 
-def default_get_submit_args(task, default_queue=None, parallel_env='orte'):
+def default_get_submit_args(task, default_queue: str=None, parallel_env: str='orte'):
     """
     Default method for determining the extra arguments to pass to the DRM.
     For example, returning `"-n 3" if` `task.drm == "lsf"` would caused all jobs
@@ -33,7 +33,6 @@ def default_get_submit_args(task, default_queue=None, parallel_env='orte'):
     jobname = '%s_task(%s)' % (task.stage.name, task.id)
     queue = ' -q %s' % default_queue if default_queue else ''
     priority = ' -p %s' % default_job_priority if default_job_priority else ''
-
 
     if drm in ['lsf', 'drmaa:lsf']:
         rusage = '-R "rusage[mem={mem}] ' if mem_req and use_mem_req else ''
@@ -76,7 +75,7 @@ class Cosmos(object):
         assert default_drm.split(':')[0] in ['local', 'lsf', 'ge', 'drmaa'], 'unsupported drm: %s' % default_drm.split(':')[0]
         assert '://' in database_url, 'Invalid database_url: %s' % database_url
 
-        self.futures_executor = futures.ThreadPoolExecutor(10)
+        # self.futures_executor = futures.ThreadPoolExecutor(10)
         if flask_app:
             self.flask_app = flask_app
         else:
@@ -85,6 +84,7 @@ class Cosmos(object):
 
         self.get_submit_args = get_submit_args
         self.flask_app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+        self.flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         # self.flask_app.config['SQLALCHEMY_ECHO'] = True
 
         from flask_sqlalchemy import SQLAlchemy
@@ -109,7 +109,7 @@ class Cosmos(object):
 
     def configure_flask(self):
         # setup flask views
-        from cosmos.web.views import gen_bprint
+        from .cosmos.web.views import gen_bprint
         # from cosmos.web.admin import add_cosmos_admin
 
         self.cosmos_bprint = gen_bprint(self)
@@ -120,8 +120,8 @@ class Cosmos(object):
     # def session(self):
     #     return self.Session()
 
-    def close(self):
-        self.futures_executor.close()
+    # def close(self):
+    #     self.futures_executor.close()
 
     def __enter__(self):
         return self
@@ -156,11 +156,9 @@ class Cosmos(object):
 
         session = self.session
 
-        old_id = None
         if restart:
             ex = session.query(Execution).filter_by(name=name).first()
             if ex:
-                old_id = ex.id
                 msg = 'Restarting %s.  Are you sure you want to delete the contents of output_dir `%s` ' \
                       'and all sql records for this execution?' % (
                           ex.output_dir, ex)
@@ -209,7 +207,14 @@ class Cosmos(object):
             if check_output_dir:
                 assert not os.path.exists(output_dir), 'Execution.output_dir `%s` already exists.' % (output_dir)
 
-            ex = Execution(id=old_id, name=name, output_dir=output_dir, manual_instantiation=False)
+            ex = Execution(name=name, output_dir=output_dir, manual_instantiation=False)
+
+            if ex.info is None:
+                # mutable dict column defaults to None
+                if not ex.created_on:
+                    ex.created_on = datetime.datetime.now()
+                ex._task_references_to_stop_garbage_collection_which_destroys_tool_attribute = []
+
             mkdir(output_dir)  # make it here so we can start logging to logfile
             session.add(ex)
 
@@ -229,7 +234,7 @@ class Cosmos(object):
         """
         Initialize the database via sql CREATE statements.  If the tables already exists, nothing will happen.
         """
-        print >> sys.stderr, 'Initializing sql database for Cosmos v%s...' % __version__
+        print('Initializing sql database for Cosmos v%s...' % __version__, file=sys.stderr)
         Base.metadata.create_all(bind=self.session.bind)
         from ..db import MetaData
 
@@ -241,7 +246,7 @@ class Cosmos(object):
         """
         Resets (deletes then initializes) the database.  This is not reversible!
         """
-        print >> sys.stderr, 'Dropping tables in db...'
+        print('Dropping tables in db...', file=sys.stderr)
         Base.metadata.drop_all(bind=self.session.bind)
         self.initdb()
 

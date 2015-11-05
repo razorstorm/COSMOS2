@@ -39,7 +39,7 @@ def run_ex1(execution):
         draw_stage_graph(execution.stage_graph(), '/tmp/ex1_task_graph.png', format='png')
         draw_task_graph(execution.task_graph(), '/tmp/ex1_stage_graph.png', format='png')
     else:
-        print 'Pygraphviz is not available :('
+        print( 'Pygraphviz is not available :(')
 
     execution.run()
 

@@ -1,4 +1,4 @@
-from recordtype import recordtype
+from collections import namedtuple
 import operator
 from collections import OrderedDict
 import re
@@ -10,9 +10,9 @@ import os
 
 import funcsigs
 
-FindFromParents = recordtype('FindFromParents', 'regex n tags', default=None)
-OutputDir = recordtype('OutputDir', 'basename prepend_execution_output_dir', default=None)
-Forward = recordtype('Forward', 'input_parameter_name', default=None)
+FindFromParents = namedtuple('FindFromParents', 'regex n tags')
+OutputDir = namedtuple('OutputDir', 'basename prepend_execution_output_dir')
+Forward = namedtuple('Forward', 'input_parameter_name')
 
 
 def unpack_if_cardinality_1(find_instance, taskfiles):
@@ -31,7 +31,7 @@ def _find(filenames, regex, error_if_missing=False):
             found = True
 
     if not found and error_if_missing:
-        raise ValueError, 'No taskfile found for %s' % regex
+        raise ValueError('No taskfile found for %s' % regex)
 
 
 OPS = OrderedDict([("<=", operator.le),
@@ -89,16 +89,15 @@ def _validate_input_mapping(cmd_name, param_name, find_instance, mapped_input_ta
 
     if not OPS[op](real_count, int(number)):
         import sys
-
-        print >> sys.stderr
-        print >> sys.stderr, '<ERROR msg="{cmd_name}() does not have right number of inputs for parameter `{param_name}` with default: {find_instance}"'.format(**locals())
+        print(file=sys.stderr)
+        print('<ERROR msg="{cmd_name}() does not have right number of inputs for parameter `{param_name}` with default: {find_instance}"'.format(**locals()), file=sys.stderr)
         for parent in parents:
-            print >> sys.stderr, '\t<PARENT task="%s">' % parent
+            print('\t<PARENT task="%s">' % parent, file=sys.stderr)
             if len(parent.output_files):
                 for out_file in parent.output_files:
-                    print >> sys.stderr, '\t\t<OUTPUT_FILE path="%s" match=%s />' % (out_file, out_file in mapped_input_taskfiles)
-            print >> sys.stderr, '\t</PARENT>'
-        print >> sys.stderr, '</ERROR>'
+                    print('\t\t<OUTPUT_FILE path="%s" match=%s />' % (out_file, out_file in mapped_input_taskfiles), file=sys.stderr)
+            print('\t</PARENT>', file=sys.stderr)
+        print('</ERROR>', file=sys.stderr)
 
         raise ValueError('Input files are missing, or their cardinality do not match.')
 
@@ -109,7 +108,7 @@ def _get_input_map(cmd_name, cmd_fxn, tags, parents):
     sig = funcsigs.signature(cmd_fxn)
 
     # funcsigs._empty
-    for param_name, param in sig.parameters.iteritems():
+    for param_name, param in sig.parameters.items():
         value = tags.get(param_name, param.default)
 
         if param_name.startswith('in_'):
@@ -129,8 +128,8 @@ def _get_input_map(cmd_name, cmd_fxn, tags, parents):
 
                 yield param_name, input_taskfile_or_input_taskfiles
             elif value == funcsigs._empty:
-                raise AssertionError, '%s Bad input `%s`, with default `%s`.  Set its default to find(), or specify ' \
-                                      'its value via tags' % (cmd_name, param_name, param.default)
+                raise AssertionError('%s Bad input `%s`, with default `%s`.  Set its default to find(), or specify ' \
+                                      'its value via tags' % (cmd_name, param_name, param.default))
             else:
                 if isinstance(value, str):
                     yield param_name, value
@@ -139,7 +138,7 @@ def _get_input_map(cmd_name, cmd_fxn, tags, parents):
 def _get_output_map(stage_name, cmd_fxn, tags, input_map, task_output_dir, execution_output_dir):
     sig = funcsigs.signature(cmd_fxn)
 
-    for param_name, param in sig.parameters.iteritems():
+    for param_name, param in sig.parameters.items():
 
         if param_name not in tags and param.default is funcsigs._empty:
             raise ValueError('Required output file parameter `%s` not specified for %s.' % (param_name, stage_name))

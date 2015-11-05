@@ -70,12 +70,12 @@ class JobManager(object):
         # Run the cmd_fxns in parallel, but do not submit any jobs they return
         # Note we use the cosmos_app thread_pool here so we don't have to setup/teardown threads (or their sqlalchemy sessions)
         # commands = self.cosmos_app.thread_pool.map(self.call_cmd_fxn, tasks)
-        commands = map(self.call_cmd_fxn, tasks)
+        commands = list(map(self.call_cmd_fxn, tasks))
         # commands = self.cosmos_app.futures_executor.map(self.call_cmd_fxn, tasks)
 
         # Submit the jobs in serial
         # TODO parallelize this for speed.  Means having all ORM stuff outside Job Submission.
-        map(self.submit_task, tasks, commands)
+        list(map(self.submit_task, tasks, commands))
 
     def terminate(self):
         f = lambda t: t.drm
@@ -109,7 +109,7 @@ class JobManager(object):
 def _create_command_sh(task, command):
     """Create a sh script that will execute a command"""
     with open(task.output_command_script_path, 'wb') as f:
-        f.write(command)
+        f.write(bytes(command, 'UTF-8'))
     os.system('chmod 700 "{0}"'.format(task.output_command_script_path))
 
     for p in [task.output_stdout_path, task.output_stderr_path]:

@@ -46,7 +46,7 @@ class DRM_LSF(DRM):
                 else:
                     return bjobs[jid]['STAT'] in ['DONE', 'EXIT', 'UNKWN', 'ZOMBI']
 
-            return filter(is_done, tasks)
+            return list(filter(is_done, tasks))
         else:
             return []
 
@@ -88,7 +88,7 @@ def bjobs_all():
     header = re.split("\s\s+", lines[0])
     for l in lines[1:]:
         items = re.split("\s\s+", l)
-        bjobs[items[0]] = dict(zip(header, items))
+        bjobs[items[0]] = dict(list(zip(header, items)))
     return bjobs
 
 

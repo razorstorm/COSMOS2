@@ -55,7 +55,7 @@ def bash_call(func, *args, **kwargs):
     from collections import OrderedDict
 
     sig = funcsigs.signature(func)
-    kwargs = dict(zip(sig.parameters.keys(), args))
+    kwargs = dict(list(zip(sig.parameters.keys(), args)))
 
     return r"""
 

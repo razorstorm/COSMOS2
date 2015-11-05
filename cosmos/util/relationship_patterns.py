@@ -13,7 +13,8 @@ def _group_paths(list_of_files_tag_tuples, by):
     :yields: dict, list[str]: The common tags for this group, a list of file_paths
     """
 
-    def f((file_path, tags)):
+    def f(xxx_todo_changeme):
+        (file_path, tags) = xxx_todo_changeme
         try:
             return {k: tags[k] for k in by}
         except KeyError as k:
@@ -70,7 +71,7 @@ def one2one(cmd_fxn, parents, tag=None, out_dir=None, stage_name=None):
     def g():
         for parent in parents:
             new_tags = parent.tags.copy()
-            new_tags.update({k:v.format(**new_tags) if isinstance(v,basestring) else v for k,v in tag.items()})
+            new_tags.update({k:v.format(**new_tags) if isinstance(v,str) else v for k,v in tag.items()})
             yield execution.add_task(cmd_fxn, tags=new_tags, parents=[parent], out_dir=out_dir or parent.output_dir, stage_name=stage_name)
 
     return list(g())
@@ -96,7 +97,7 @@ def many2one(cmd_fxn, parents, groupby, tag=None, out_dir='', stage_name=None):
 
     def g():
         for new_tags, parent_group in group(parents, groupby):
-            new_tags.update({k:v.format(**new_tags) if isinstance(v,basestring) else v for k,v in tag.items()})
+            new_tags.update({k:v.format(**new_tags) if isinstance(v,str) else v for k,v in tag.items()})
 
             yield execution.add_task(cmd_fxn, tags=new_tags, parents=parent_group,
                                      out_dir=out_dir(new_tags) if hasattr(out_dir, '__call__') else out_dir,
@@ -129,7 +130,7 @@ def one2many(cmd_fxn, parents, splitby, tag=None, out_dir='', stage_name=None):
 
             for split_tags in tag_itrbl:
                 new_tags.update(split_tags)
-                new_tags.update({k:v.format(**new_tags) if isinstance(v,basestring) else v for k,v in tag.items()})
+                new_tags.update({k:v.format(**new_tags) if isinstance(v,str) else v for k,v in tag.items()})
                 yield execution.add_task(cmd_fxn, tags=new_tags, parents=[parent_task],
                                          out_dir=out_dir(new_tags) if hasattr(out_dir, '__call__') else out_dir,
                                          stage_name=stage_name)
@@ -137,4 +138,4 @@ def one2many(cmd_fxn, parents, splitby, tag=None, out_dir='', stage_name=None):
     return list(g())
 
 def make_tags(new_tags, tag):
-    return new_tags.update({k:v.format(**new_tags) if isinstance(v,basestring) else v for k,v in tag.items()})
+    return new_tags.update({k:v.format(**new_tags) if isinstance(v,str) else v for k,v in tag.items()})

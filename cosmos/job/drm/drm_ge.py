@@ -100,8 +100,8 @@ class DRM_GE(DRM):
 
     def kill_tasks(self, tasks):
         for group in grouper(tasks, 50):
-            group = filter(lambda x: x is not None, group)
-            pids = ','.join(map(lambda t: str(t.drm_jobID), group))
+            group = [x for x in group if x is not None]
+            pids = ','.join([str(t.drm_jobID) for t in group])
             sp.Popen(['qdel', pids], preexec_fn=preexec_function)
 
 
@@ -139,7 +139,7 @@ def qstat_all():
     bjobs = {}
     for l in lines[2:]:
         items = re.split("\s+", l.strip())
-        bjobs[items[0]] = dict(zip(keys, items))
+        bjobs[items[0]] = dict(list(zip(keys, items)))
     return bjobs
 
 

@@ -25,4 +25,4 @@ def send(message, hostname=None, sticky=True):
             priority=1,
         )
     except Exception as e:
-        print >> sys.stderr, '*** ERROR sending growl notification to %s: %s' % (hostname, e)
+        print('*** ERROR sending growl notification to %s: %s' % (hostname, e), file=sys.stderr)

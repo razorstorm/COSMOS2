@@ -7,11 +7,9 @@ from flask import url_for
 
 from ..db import Base
 from ..util.sqla import Enum34_ColumnType
-from .. import StageStatus, signal_stage_status_change, RelationshipType, TaskStatus
+from .. import StageStatus, signal_stage_status_change, RelationshipType, TaskStatus, ACCEPTABLE_TAG_TYPES
 import networkx as nx
 import datetime
-from cosmos import ACCEPTABLE_TAG_TYPES
-
 
 @signal_stage_status_change.connect
 def task_status_changed(stage):

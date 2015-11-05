@@ -31,7 +31,7 @@ class ToolValidationError(Exception): pass
 class GetOutputError(Exception): pass
 
 
-task_failed_printout = u"""Failure Info:
+task_failed_printout = """Failure Info:
 <COMMAND path="{0.output_command_script_path}" drm_jobID="{0.drm_jobID}">
 {0.command_script_text}
 </COMMAND>
@@ -283,9 +283,9 @@ class Task(Base):
         return "[%s] %s%s" % (self.id, self.stage.name, tags)
 
     def tags_as_query_string(self):
-        import urllib
+        import urllib.request, urllib.parse, urllib.error
 
-        return urllib.urlencode(self.tags)
+        return urllib.parse.urlencode(self.tags)
 
     def delete(self, delete_files=False):
         self.log.debug('Deleting %s' % self)
@@ -304,7 +304,7 @@ class Task(Base):
 
     @property
     def tags_pretty(self):
-        return '%s' % ', '.join('%s=%s' % (k, "'%s'" % v if isinstance(v, basestring) else v) for k, v in self.tags.items())
+        return '%s' % ', '.join('%s=%s' % (k, "'%s'" % v if isinstance(v, str) else v) for k, v in self.tags.items())
 
     def __repr__(self):
         return '<Task[%s] %s(%s)>' % (self.id or 'id_%s' % id(self),

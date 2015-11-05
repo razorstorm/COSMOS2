@@ -39,7 +39,7 @@ def call(cmd_fxn, task, input_map, output_map):
             param_val = kwargs.get(param_name, sig.parameters[param_name].default)
             setattr(task, param_name, param_val)
 
-    assert isinstance(out, basestring) or out is None, 'cmd_fxn %s did not return a str or None' % cmd_fxn
+    assert isinstance(out, str) or out is None, 'cmd_fxn %s did not return a str or None' % cmd_fxn
     return out
 
 

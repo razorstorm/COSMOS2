@@ -56,7 +56,7 @@ def render_recipe(execution, recipe, default_drm):
 
         tagz = [frozenset(t.tags.items()) for t in stage.tasks]
         if len(tagz) != len(set(tagz)):
-            d = next(duplicates(map(dict, tagz)))
+            d = next(duplicates(list(map(dict, tagz))))
             raise AssertionError('Duplicate tags detected in %s: %s' % (stage, d))
 
     return task_g, stage_g
