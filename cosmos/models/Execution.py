@@ -83,7 +83,7 @@ class Execution(Base):
                           backref='execution')
 
     exclude_from_dict = ['info']
-    jobmanager=None
+    jobmanager = None
     dont_garbage_collect = None
 
     @declared_attr
@@ -398,7 +398,6 @@ class Execution(Base):
 
     def __repr__(self):
         return '<Execution[%s] %s>' % (self.id or '', self.name)
-
 
     def delete(self, delete_files: bool):
         """

@@ -38,20 +38,16 @@ install_requires = [
     "SQLAlchemy-Utils",
     # "pyparsing==1.5.7",
     'psutil',
-    "drmaa"
+    "drmaa",
+    'more_itertools'
 ]
 
-# if python2:
-if sys.version_info[0] == 2:
-elif sys.version_info[0] == 3:
-    name = 'cosmos'
-
 if sys.version_info < (3,):
-    # package_dir = {'': 'cosmos_py2'}
-    package_data = {'cosmos': list(find_all('cosmos_python2/', '.py|.pyc$', inverse=True, remove_prefix=True))}
+    # package_dir = {'': 'cosmos'}
+    package_data = {'cosmos': list(find_all('cosmos/', '.py|.pyc$', inverse=True, remove_prefix=True))}
     install_requires += ['futures']
 else:
-    # package_dir = {'': 'cosmos'}
+    package_dir = {'': 'cosmos'}
     package_data = {'cosmos': list(find_all('cosmos/', '.py|.pyc$', inverse=True, remove_prefix=True))}
 
 setup(
@@ -66,10 +62,12 @@ setup(
     license="MIT",
     install_requires=install_requires,
     packages=find_packages(),
+    # package_dir=package_dir,
     include_package_data=True,
-    package_data={'cosmos':package_data},
+    package_data=package_data,
     classifiers=[
-        'Programming Language :: Python :: 3 :: Only'
+        'Programming Language :: Python :: 2.7',
+        # 'Programming Language :: Python :: 3',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: MacOS',

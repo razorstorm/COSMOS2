@@ -129,11 +129,6 @@ def isgenerator(iterable):
     return hasattr(iterable, '__iter__') and not hasattr(iterable, '__len__')
 
 
-def groupby2(iterable, fxn):
-    """Sorts and aggregates an iterable using a function"""
-    return it.groupby(sorted(iterable, key=fxn), fxn)
-
-
 def duplicates(iterable):
     """return a list of duplicates"""
     for x, group in it.groupby(sorted(iterable)):
