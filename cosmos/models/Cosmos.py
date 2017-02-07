@@ -26,7 +26,8 @@ def default_get_submit_args(task, parallel_env='orte'):
     use_mem_req = False
 
     jobname = '%s[%s]' % (task.stage.name, task.uid.replace('/', '_'))
-    queue = ' -q %s' % task.queue or ''
+    project = ' -P %s' % task.project if task.project else ''
+    queue = ' -q %s' % task.queue if task.queue else ''
     priority = ' -p %s' % default_job_priority if default_job_priority else ''
 
     if task.drm in ['lsf', 'drmaa:lsf']:
@@ -34,8 +35,8 @@ def default_get_submit_args(task, parallel_env='orte'):
         time = ' -W 0:{0}'.format(task.time_req) if task.time_req else ''
         return '-R "{rusage}span[hosts=1]" -n {task.core_req}{time}{queue} -J "{jobname}"'.format(**locals())
     elif task.drm in ['ge', 'drmaa:ge']:
-        return '-cwd -pe {parallel_env} {core_req}{priority} -N "{jobname}"{queue}'.format(
-            priority=priority, queue=queue, jobname=jobname, core_req=task.core_req, parallel_env=parallel_env)
+        return '-cwd -pe {parallel_env} {core_req}{priority} -N "{jobname}"{project}{queue}'.format(
+            priority=priority, project=project, queue=queue, jobname=jobname, core_req=task.core_req, parallel_env=parallel_env)
     elif task.drm == 'local':
         return None
     else:
@@ -47,6 +48,7 @@ class Cosmos(object):
                  database_url='sqlite:///:memory:',
                  get_submit_args=default_get_submit_args,
                  default_drm='local',
+                 default_project=None,
                  default_queue=None,
                  flask_app=None):
         """
@@ -96,6 +98,7 @@ class Cosmos(object):
             self.session.remove()
 
         self.default_drm = default_drm
+        self.default_project = default_project
         self.default_queue = default_queue
 
     # def configure_flask(self):

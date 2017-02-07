@@ -125,7 +125,7 @@ class Workflow(Base):
         for d in dirs:
             mkdir(d)
 
-    def add_task(self, func, params=None, parents=None, stage_name=None, uid=None, drm=None, queue=None, must_succeed=True, time_req=None):
+    def add_task(self, func, params=None, parents=None, stage_name=None, uid=None, drm=None, project=None, queue=None, must_succeed=True, time_req=None):
         """
         Adds a new Task to the Workflow.  If the Task already exists (and was successful), return the successful Task stored in the database
 
@@ -139,6 +139,7 @@ class Workflow(Base):
             database version will be returned and a new one will not be created.
         :param str stage_name: The name of the Stage to add this Task to.  Defaults to `func.__name__`.
         :param str drm: The drm to use for this Task (example 'local', 'ge' or 'drmaa:lsf').  Defaults to the `default_drm` parameter of :meth:`Cosmos.start`
+        :param project: The name of a project to submit to; defaults to the `default_project` parameter of :meth:`Cosmos.start`
         :param queue: The name of a queue to submit to; defaults to the `default_queue` parameter of :meth:`Cosmos.start`
         :param bool must_succeed: Default True.  If False, the Workflow will not fail if this Task does not succeed.  Dependent Jobs will not be executed.
         :param bool time_req: The time requirement; will set the Task.time_req attribute which is intended to be used by :func:`get_submit_args` to request resources.
@@ -229,6 +230,7 @@ class Workflow(Base):
                         output_map=output_map,
                         uid=uid,
                         drm=drm or self.cosmos_app.default_drm,
+                        project=project or self.cosmos_app.default_project,
                         queue=queue or self.cosmos_app.default_queue,
                         must_succeed=must_succeed,
                         core_req=params_or_signature_default_or('core_req', 1),

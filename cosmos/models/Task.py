@@ -160,6 +160,7 @@ class Task(Base):
     attempt = Column(Integer, default=1)
     must_succeed = Column(Boolean, default=True)
     drm = Column(String(255), nullable=False)
+    project = Column(String(255))
     queue = Column(String(255))
     parents = relationship("Task",
                            secondary=TaskEdge.__table__,
