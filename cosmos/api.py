@@ -7,7 +7,6 @@ from cosmos.models.Workflow import Workflow, default_task_log_output_dir
 from cosmos import WorkflowStatus, StageStatus, TaskStatus, NOOP, signal_workflow_status_change, signal_stage_status_change, signal_task_status_change, Dependency
 
 from cosmos.util.args import add_workflow_args
-from cosmos.util.relationship_patterns import group
 from cosmos.util.helpers import make_dict
 from cosmos.util.iterstuff import only_one
 from cosmos.util.signal_handlers import SGESignalHandler, handle_sge_signals
@@ -31,7 +30,7 @@ def load_input(out_file): pass
 
 def arg_to_str(name, value):
     if value:
-        if value == True:
+        if value is True:
             return name
         else:
             return '%s %s' % (name, value)
@@ -43,17 +42,18 @@ def args_to_str(*args):
     """
     Turn a set of arguments into a string to be passed to a command line tool
 
-    :param args: A number of (str arg_flag, value) tuples.  If value is None or False it will be ignored.  Otherwise produce --{arg_flag} {value}.
+    :param args: An iterable of (str arg_flag, value) tuples.  If value is None or False it will be ignored.  Otherwise produce --{arg_flag} {value}.
 
     >>> x = 'bar'
     >>> y = None
     >>> z = 123
+    >>> f = True
     >>> args_to_str(('--foo', x))
     '--foo bar'
-
+    >>> args_to_str(('--flag', f))
+    '--flag'
     >>> args_to_str(('--skip-me', y), ('--use-me', z))
     '--use-me 123'
-
     """
     return " \\\n".join(arg_to_str(k, v) for k, v in args if arg_to_str(k, v) != '')
 

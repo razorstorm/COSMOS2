@@ -127,11 +127,9 @@ class Cosmos(object):
         :param str name: A name for the workflow.  Must be unique for this Cosmos session.
         :param bool restart: If True and the workflow exists, delete it first.
         :param bool skip_confirm: (If True, do not prompt the shell for input before deleting workflows or files.
-        :param str primary_log_path: The path of the primary log to write to.  If None, does not write to a file.  Log information is always printed to
-          stderr.
+        :param str primary_log_path: The path of the primary log to write to.  If None, does not write to a file.  Log information is always printed to stderr.
         :param bool fail_fast: If True, terminate the workflow the first time a Task fails.
         Otherwise, run all Tasks except those downstream of a failure.
-
         :returns: An Workflow instance.
         """
         from .Workflow import Workflow
@@ -255,14 +253,17 @@ class Cosmos(object):
 
         IPython.embed()
 
+    def init_flask(self):
+        from cosmos.web.views import gen_bprint
+        self.cosmos_bprint = gen_bprint(self.session)
+        self.flask_app.register_blueprint(self.cosmos_bprint)
+        return self.flask_app
+
     def runweb(self, host, port, debug=True):
         """
         Starts the web dashboard
         :param str host: Host name to bind to.  Default is local host, but commonly 0.0.0.0 to allow outside internet traffic.
         :param int port: Port to bind to.
         """
-        from cosmos.web.views import gen_bprint
-        self.cosmos_bprint = gen_bprint(self.session)
-        self.flask_app.register_blueprint(self.cosmos_bprint)
-
+        self.init_flask()
         return self.flask_app.run(debug=debug, host=host, port=port)
