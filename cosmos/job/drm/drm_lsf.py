@@ -3,7 +3,7 @@ import re
 import os
 
 from .DRM_Base import DRM
-from .util import exit_process_group
+from .util import new_process_group
 from ... import TaskStatus
 
 decode_lsf_state = dict([
@@ -31,7 +31,7 @@ class DRM_LSF(DRM):
             out = sp.check_output('{bsub} "{cmd_str}"'.format(cmd_str=self.jobmanager.get_command_str(task),
                                                               bsub=bsub),
                                   env=os.environ,
-                                  preexec_fn=exit_process_group,
+                                  preexec_fn=new_process_group,
                                   shell=True)
 
             task.drm_jobID = unicode(int(re.search(r'Job <(\d+)>', out).group(1)))
@@ -80,7 +80,7 @@ class DRM_LSF(DRM):
 
     def kill_tasks(self, tasks):
         for t in tasks:
-            sp.check_call(['bkill', str(t.drm_jobID)], preexec_function=exit_process_group)
+            sp.check_call(['bkill', str(t.drm_jobID)], preexec_function=new_process_group)
 
 
 def bjobs_all():
@@ -89,7 +89,7 @@ def bjobs_all():
     information about the job
     """
     try:
-        lines = sp.check_output(['bjobs', '-a'], preexec_function=exit_process_group).split('\n')
+        lines = sp.check_output(['bjobs', '-a'], preexec_function=new_process_group).split('\n')
     except (sp.CalledProcessError, OSError):
         return {}
     bjobs = {}

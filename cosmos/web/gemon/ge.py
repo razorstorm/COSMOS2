@@ -2,7 +2,7 @@ import subprocess as sp
 import getpass
 from collections import OrderedDict
 
-from cosmos.job.drm.util import exit_process_group
+from cosmos.job.drm.util import new_process_group
 
 import xml.etree.ElementTree as ET
 
@@ -20,7 +20,7 @@ def qstat(user=getpass.getuser()):
         return d
 
     try:
-        et = ET.fromstring(sp.check_output(['qstat', '-ext', '-xml', '-u', user], preexec_fn=exit_process_group))
+        et = ET.fromstring(sp.check_output(['qstat', '-ext', '-xml', '-u', user], preexec_fn=new_process_group))
     except (sp.CalledProcessError, OSError):
         # Error occurs if there are no jobs
         return pd.DataFrame()

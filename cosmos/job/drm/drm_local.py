@@ -4,7 +4,7 @@ import signal
 import time
 
 from .DRM_Base import DRM
-from .util import exit_process_group
+from .util import new_process_group
 from ...api import TaskStatus
 
 
@@ -22,7 +22,7 @@ class DRM_Local(DRM):
                          stdout=open(task.output_stderr_path, 'w'),
                          stderr=open(task.output_stdout_path, 'w'),
                          shell=False, env=os.environ,
-                         preexec_fn=exit_process_group)
+                         preexec_fn=new_process_group)
         p.start_time = time.time()
         drm_jobID = unicode(p.pid)
         self.procs[drm_jobID] = p

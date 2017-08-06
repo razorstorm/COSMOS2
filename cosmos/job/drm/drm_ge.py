@@ -6,7 +6,7 @@ import os
 from collections import OrderedDict
 import tempfile
 import time
-from .util import div, convert_size_to_kb, exit_process_group
+from .util import div, convert_size_to_kb, new_process_group
 from ... import TaskStatus
 from ...util.signal_handlers import sleep_through_signals
 
@@ -30,7 +30,7 @@ class DRM_GE(DRM):
         try:
             out = sp.check_output(
                 '{qsub} "{cmd_str}"'.format(cmd_str=task.output_command_script_path, qsub=qsub),
-                env=os.environ, preexec_fn=exit_process_group, shell=True, stderr=sp.STDOUT)
+                env=os.environ, preexec_fn=new_process_group, shell=True, stderr=sp.STDOUT)
 
             task.drm_jobID = unicode(int(out))
         except sp.CalledProcessError as cpe:
@@ -168,7 +168,7 @@ class DRM_GE(DRM):
         for group in grouper(50, tasks):
             group = filter(lambda x: x is not None, group)
             pids = ','.join(map(lambda t: unicode(t.drm_jobID), group))
-            sp.call(['qdel', pids], preexec_fn=exit_process_group)
+            sp.call(['qdel', pids], preexec_fn=new_process_group)
 
 
 def _is_corrupt(qacct_dict):
@@ -211,7 +211,7 @@ def _qacct_raw(task, timeout=600, quantum=15):
         qacct_returncode = 0
         with contextlib.closing(tempfile.TemporaryFile()) as qacct_stderr_fd:
             try:
-                qacct_stdout_str = sp.check_output(['qacct', '-j', unicode(task.drm_jobID)], preexec_fn=exit_process_group, stderr=qacct_stderr_fd)
+                qacct_stdout_str = sp.check_output(['qacct', '-j', unicode(task.drm_jobID)], preexec_fn=new_process_group, stderr=qacct_stderr_fd)
                 if len(qacct_stdout_str.strip()):
                     break
             except sp.CalledProcessError as err:
@@ -281,7 +281,7 @@ def _qstat_all():
     information about the job
     """
     try:
-        lines = sp.check_output(['qstat'], preexec_fn=exit_process_group).strip().split('\n')
+        lines = sp.check_output(['qstat'], preexec_fn=new_process_group).strip().split('\n')
     except (sp.CalledProcessError, OSError):
         return {}
     keys = re.split("\s+", lines[0])
