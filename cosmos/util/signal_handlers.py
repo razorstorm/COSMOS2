@@ -36,7 +36,6 @@ to die.
 
 import collections
 import signal
-import subprocess
 import sys
 import threading
 import time
@@ -67,23 +66,6 @@ def sleep_through_signals(timeout):
     while elapsed_tm < timeout:
         time.sleep(timeout - elapsed_tm)
         elapsed_tm = time.time() - start_tm
-
-
-def hms_to_sec(time_str):
-    h, m, s = time_str.split(':')
-    return (int(h) * 3600) + (int(m) * 60) + int(s)
-
-
-def get_notify_sec():
-    """
-    Get the time, in sec, between when an SGE courtesy signal is sent and the real one.
-    """
-    try:
-        time_str = subprocess.check_output(
-            'qconf -sq $QUEUE | grep notify', shell=True).strip().split(" ")[-1]
-        return hms_to_sec(time_str)
-    except (AttributeError, IndexError, ValueError, subprocess.CalledProcessError):
-        return 0
 
 
 class SGESignalHandler(object):
@@ -119,7 +101,7 @@ class SGESignalHandler(object):
         if lethal_signals is None:
             lethal_signals = {signal.SIGINT, signal.SIGTERM, signal.SIGUSR2, signal.SIGXCPU}
         if benign_signals is None:
-            benign_signals = {signal.SIGCONT, signal.SIGUSR1}
+            benign_signals = {signal.SIGUSR1}
         if explanations is None:
             explanations = {
                 signal.SIGUSR1: 'SGE is about to send a SIGSTOP, or, '
@@ -136,11 +118,6 @@ class SGESignalHandler(object):
         self._prev_handlers = dict()
         self._signals_caught = collections.Counter()
         self._signals_logged = collections.Counter()
-
-        self._notify_sec = get_notify_sec()
-        self._susp_tm = None
-        self._total_susp_events = 0
-        self._total_susp_sec = 0.0
 
         self._logging_enabled = False
         self._logging_event = None
@@ -181,11 +158,6 @@ class SGESignalHandler(object):
                        self._workflow_name,
                        sum(self._signals_caught.values()),
                        sum(self._signals_logged.values()))
-        if self._total_susp_sec:
-            self._log.info('%s Was suspended by SGE %d time(s) for approx. %.0f sec',
-                           self._workflow_name,
-                           self._total_susp_events,
-                           self._total_susp_sec)
 
     def signal_handler(self, signum, frame):    # pylint: disable=unused-argument
         self._signals_caught[signum] += 1
@@ -198,7 +170,7 @@ class SGESignalHandler(object):
         prev_handler = signal.getsignal(sig)
         if prev_handler not in (die, signal.SIG_DFL, signal.SIG_IGN, signal.default_int_handler):
             raise RuntimeError(
-                'a signal handler is already set for signal %d (%s): %s' %
+                "a signal handler is already set for signal %d (%s): %s" %
                 (sig, self._explain(sig), prev_handler))
         self._prev_handlers[sig] = prev_handler
 
@@ -242,19 +214,6 @@ class SGESignalHandler(object):
             new_signals = self._signals_caught - self._signals_logged
             self._logging_event.clear()
 
-            #
-            # If this daemon is running, we're obviously not suspended.
-            # If we were previously suspended, log that we have resumed.
-            #
-            if self._susp_tm is not None:
-                susp_sec = time.time() - self._susp_tm
-                self._susp_tm = None
-                if susp_sec > 0:
-                    self._log.info('%s Resumed after being suspended for approx. %.0f sec',
-                                   self._workflow_name, susp_sec)
-                    self._total_susp_events += 1
-                    self._total_susp_sec += susp_sec
-
             if new_signals:
                 self._log_signal_receipt(new_signals)
                 self._signals_logged += new_signals
@@ -264,8 +223,3 @@ class SGESignalHandler(object):
                                    self._workflow_name, self.workflow.termination_signal)
                 else:
                     self._log.debug('%s Ignoring benign signal(s)', self._workflow_name)
-
-                if signal.SIGUSR1 in new_signals:
-                    # SIGUSR1 means SIGSTOP (which we can't trap) is coming soon
-                    if self._susp_tm is None:
-                        self._susp_tm = time.time() + self._notify_sec
